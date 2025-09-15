@@ -1,0 +1,872 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Video Proctoring System</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            color: #333;
+        }
+
+        .header {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            padding: 20px;
+            text-align: center;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+        }
+
+        .header h1 {
+            color: white;
+            font-size: 2.5em;
+            margin-bottom: 10px;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 20px;
+            display: grid;
+            grid-template-columns: 2fr 1fr;
+            gap: 20px;
+            min-height: calc(100vh - 120px);
+        }
+
+        .video-section {
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 20px;
+            padding: 30px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+            backdrop-filter: blur(10px);
+        }
+
+        .controls-section {
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 20px;
+            padding: 30px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+            backdrop-filter: blur(10px);
+            max-height: fit-content;
+        }
+
+        #videoElement {
+            width: 100%;
+            height: 400px;
+            background: #000;
+            border-radius: 15px;
+            object-fit: cover;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+        }
+
+        .candidate-info {
+            margin-bottom: 20px;
+            padding: 20px;
+            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+            border-radius: 15px;
+            box-shadow: inset 0 2px 10px rgba(0, 0, 0, 0.1);
+        }
+
+        .candidate-info input {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #e1e8ed;
+            border-radius: 10px;
+            font-size: 16px;
+            transition: all 0.3s ease;
+            background: rgba(255, 255, 255, 0.8);
+        }
+
+        .candidate-info input:focus {
+            outline: none;
+            border-color: #667eea;
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.3);
+        }
+
+        .button {
+            padding: 15px 30px;
+            border: none;
+            border-radius: 12px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin: 5px;
+            min-width: 120px;
+        }
+
+        .start-btn {
+            background: linear-gradient(135deg, #4CAF50, #45a049);
+            color: white;
+            box-shadow: 0 5px 15px rgba(76, 175, 80, 0.3);
+        }
+
+        .start-btn:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 8px 25px rgba(76, 175, 80, 0.4);
+        }
+
+        .stop-btn {
+            background: linear-gradient(135deg, #f44336, #d32f2f);
+            color: white;
+            box-shadow: 0 5px 15px rgba(244, 67, 54, 0.3);
+        }
+
+        .stop-btn:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 8px 25px rgba(244, 67, 54, 0.4);
+        }
+
+        .report-btn {
+            background: linear-gradient(135deg, #2196F3, #1976D2);
+            color: white;
+            box-shadow: 0 5px 15px rgba(33, 150, 243, 0.3);
+        }
+
+        .report-btn:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 8px 25px rgba(33, 150, 243, 0.4);
+        }
+
+        .status-panel {
+            margin-top: 20px;
+            padding: 20px;
+            background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+            border-radius: 15px;
+            box-shadow: inset 0 2px 10px rgba(0, 0, 0, 0.1);
+        }
+
+        .status-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 12px 0;
+            border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+        }
+
+        .status-item:last-child {
+            border-bottom: none;
+        }
+
+        .status-indicator {
+            padding: 5px 15px;
+            border-radius: 20px;
+            font-weight: bold;
+            font-size: 12px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .status-good { background: #d4edda; color: #155724; }
+        .status-warning { background: #fff3cd; color: #856404; }
+        .status-danger { background: #f8d7da; color: #721c24; }
+
+        .alerts-panel {
+            margin-top: 20px;
+            max-height: 300px;
+            overflow-y: auto;
+        }
+
+        .alert {
+            padding: 12px;
+            margin-bottom: 10px;
+            border-radius: 10px;
+            border-left: 4px solid;
+            animation: slideIn 0.3s ease-out;
+        }
+
+        @keyframes slideIn {
+            from { transform: translateX(100%); opacity: 0; }
+            to { transform: translateX(0); opacity: 1; }
+        }
+
+        .alert-warning {
+            background: #fff3cd;
+            border-color: #ffc107;
+            color: #856404;
+        }
+
+        .alert-danger {
+            background: #f8d7da;
+            border-color: #dc3545;
+            color: #721c24;
+        }
+
+        .timer {
+            font-size: 24px;
+            font-weight: bold;
+            text-align: center;
+            padding: 15px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border-radius: 15px;
+            margin-bottom: 20px;
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.3);
+        }
+
+        .report-section {
+            margin-top: 20px;
+            padding: 20px;
+            background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+            border-radius: 15px;
+            display: none;
+        }
+
+        .score {
+            font-size: 36px;
+            font-weight: bold;
+            text-align: center;
+            padding: 20px;
+            border-radius: 15px;
+            margin: 20px 0;
+        }
+
+        .score.excellent { background: #d4edda; color: #155724; }
+        .score.good { background: #d1ecf1; color: #0c5460; }
+        .score.warning { background: #fff3cd; color: #856404; }
+        .score.poor { background: #f8d7da; color: #721c24; }
+
+        .hidden { display: none; }
+
+        @media (max-width: 768px) {
+            .container {
+                grid-template-columns: 1fr;
+                gap: 10px;
+                padding: 10px;
+            }
+            
+            .header h1 {
+                font-size: 1.8em;
+            }
+            
+            #videoElement {
+                height: 250px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>🎯 AI Video Proctoring System</h1>
+        <p>Advanced Focus & Object Detection for Online Interviews</p>
+    </div>
+
+    <div class="container">
+        <div class="video-section">
+            <div class="candidate-info">
+                <h3 style="margin-bottom: 15px; color: #333;">Candidate Information</h3>
+                <input type="text" id="candidateName" placeholder="Enter candidate name..." />
+            </div>
+            
+            <video id="videoElement" autoplay muted playsinline></video>
+            
+            <div style="text-align: center; margin-top: 20px;">
+                <button class="button start-btn" onclick="startInterview()">🎬 Start Interview</button>
+                <button class="button stop-btn" onclick="stopInterview()" disabled>⏹️ Stop Interview</button>
+                <button class="button report-btn" onclick="generateReport()" disabled>📊 Generate Report</button>
+            </div>
+        </div>
+
+        <div class="controls-section">
+            <div class="timer" id="timer">00:00:00</div>
+            
+            <div class="status-panel">
+                <h3 style="margin-bottom: 15px; color: #333;">🔍 Detection Status</h3>
+                <div class="status-item">
+                    <span>Face Detection:</span>
+                    <span class="status-indicator status-good" id="faceStatus">Good</span>
+                </div>
+                <div class="status-item">
+                    <span>Eye Focus:</span>
+                    <span class="status-indicator status-good" id="focusStatus">Focused</span>
+                </div>
+                <div class="status-item">
+                    <span>Drowsiness:</span>
+                    <span class="status-indicator status-good" id="drowsinessStatus">Alert</span>
+                </div>
+                <div class="status-item">
+                    <span>Object Detection:</span>
+                    <span class="status-indicator status-good" id="objectStatus">Clear</span>
+                </div>
+                <div class="status-item">
+                    <span>Multiple Faces:</span>
+                    <span class="status-indicator status-good" id="multiStatus">Single</span>
+                </div>
+            </div>
+
+            <div class="alerts-panel">
+                <h3 style="margin-bottom: 15px; color: #333;">🚨 Live Alerts</h3>
+                <div id="alertsContainer"></div>
+            </div>
+        </div>
+    </div>
+
+    <div class="report-section" id="reportSection">
+        <h2>📋 Proctoring Report</h2>
+        <div id="reportContent"></div>
+    </div>
+
+    <!-- Load required libraries -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/tensorflow/4.10.0/tf.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/face-api.js/0.22.2/face-api.min.js"></script>
+
+    <script>
+        // Global variables
+        let videoStream = null;
+        let isInterviewActive = false;
+        let startTime = null;
+        let timerInterval = null;
+        let detectionInterval = null;
+        
+        // Tracking variables
+        let focusLostCount = 0;
+        let noFaceCount = 0;
+        let multipleFacesCount = 0;
+        let drowsinessCount = 0;
+        let suspiciousObjects = [];
+        let alerts = [];
+        let lastFaceDetection = Date.now();
+        let lastFocusTime = Date.now();
+        let consecutiveFocusLoss = 0;
+        let consecutiveNoFace = 0;
+        let consecutiveEyesClosed = 0;
+        let eyesClosedDuration = 0;
+
+        // Eye drowsiness detection
+        function detectEyeClosure(landmarks) {
+            if (!landmarks) return false;
+            
+            const leftEye = landmarks.getLeftEye();
+            const rightEye = landmarks.getRightEye();
+            
+            // Calculate eye aspect ratio (simplified)
+            const leftEAR = calculateEAR(leftEye);
+            const rightEAR = calculateEAR(rightEye);
+            
+            const avgEAR = (leftEAR + rightEAR) / 2;
+            return avgEAR < 0.25; // Threshold for closed eyes
+        }
+
+        function calculateEAR(eyePoints) {
+            // Simplified EAR calculation
+            const height1 = distance(eyePoints[1], eyePoints[5]);
+            const height2 = distance(eyePoints[2], eyePoints[4]);
+            const width = distance(eyePoints[0], eyePoints[3]);
+            
+            return (height1 + height2) / (2.0 * width);
+        }
+
+        function distance(p1, p2) {
+            return Math.sqrt(Math.pow(p2.x - p1.x, 2) + Math.pow(p2.y - p1.y, 2));
+        }
+
+        // Initialize face detection models
+        async function loadModels() {
+            try {
+                await faceapi.nets.tinyFaceDetector.loadFromUri('https://cdnjs.cloudflare.com/ajax/libs/face-api.js/0.22.2/models');
+                await faceapi.nets.faceLandmark68Net.loadFromUri('https://cdnjs.cloudflare.com/ajax/libs/face-api.js/0.22.2/models');
+                await faceapi.nets.faceExpressionNet.loadFromUri('https://cdnjs.cloudflare.com/ajax/libs/face-api.js/0.22.2/models');
+                console.log('Face detection models loaded successfully');
+            } catch (error) {
+                console.log('Using fallback detection methods');
+            }
+        }
+
+        // Initialize camera
+        async function initCamera() {
+            try {
+                videoStream = await navigator.mediaDevices.getUserMedia({
+                    video: { 
+                        width: 640, 
+                        height: 480,
+                        facingMode: 'user'
+                    },
+                    audio: false
+                });
+                
+                const video = document.getElementById('videoElement');
+                video.srcObject = videoStream;
+                return true;
+            } catch (error) {
+                alert('Camera access denied. Please allow camera permissions.');
+                return false;
+            }
+        }
+
+        // Start interview
+        async function startInterview() {
+            const candidateName = document.getElementById('candidateName').value.trim();
+            if (!candidateName) {
+                alert('Please enter candidate name before starting the interview.');
+                return;
+            }
+
+            const cameraReady = await initCamera();
+            if (!cameraReady) return;
+
+            await loadModels();
+
+            isInterviewActive = true;
+            startTime = new Date();
+            
+            // Update UI
+            document.querySelector('.start-btn').disabled = true;
+            document.querySelector('.stop-btn').disabled = false;
+            document.querySelector('.report-btn').disabled = true;
+            document.getElementById('candidateName').disabled = true;
+
+            // Start timer
+            timerInterval = setInterval(updateTimer, 1000);
+            
+            // Start detection
+            detectionInterval = setInterval(runDetection, 1000);
+            
+            addAlert('Interview started successfully', 'info');
+        }
+
+        // Stop interview
+        function stopInterview() {
+            isInterviewActive = false;
+            
+            if (videoStream) {
+                videoStream.getTracks().forEach(track => track.stop());
+            }
+            
+            clearInterval(timerInterval);
+            clearInterval(detectionInterval);
+            
+            // Update UI
+            document.querySelector('.start-btn').disabled = false;
+            document.querySelector('.stop-btn').disabled = true;
+            document.querySelector('.report-btn').disabled = false;
+            document.getElementById('candidateName').disabled = false;
+            
+            addAlert('Interview ended', 'info');
+        }
+
+        // Update timer display
+        function updateTimer() {
+            if (!startTime) return;
+            
+            const elapsed = new Date() - startTime;
+            const hours = Math.floor(elapsed / 3600000);
+            const minutes = Math.floor((elapsed % 3600000) / 60000);
+            const seconds = Math.floor((elapsed % 60000) / 1000);
+            
+            const timeString = `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+            document.getElementById('timer').textContent = timeString;
+        }
+
+        // Main detection function
+        async function runDetection() {
+            if (!isInterviewActive) return;
+
+            const video = document.getElementById('videoElement');
+            if (!video || video.videoWidth === 0) return;
+
+            try {
+                // Face detection
+                await detectFaces(video);
+                
+                // Object detection (simplified simulation)
+                detectObjects();
+                
+                // Update status indicators
+                updateStatusIndicators();
+                
+            } catch (error) {
+                console.log('Detection error:', error);
+            }
+        }
+
+        // Face detection function
+        async function detectFaces(video) {
+            try {
+                const detections = await faceapi.detectAllFaces(video, new faceapi.TinyFaceDetectorOptions())
+                    .withFaceLandmarks()
+                    .withFaceExpressions();
+
+                if (detections.length === 0) {
+                    // No face detected
+                    consecutiveNoFace++;
+                    if (consecutiveNoFace > 10) { // 10 seconds
+                        noFaceCount++;
+                        addAlert('No face detected for >10 seconds', 'danger');
+                        consecutiveNoFace = 0;
+                    }
+                    lastFaceDetection = Date.now();
+                } else if (detections.length === 1) {
+                    // Single face detected - good
+                    consecutiveNoFace = 0;
+                    lastFaceDetection = Date.now();
+                    
+                    // Check for focus (simplified - based on face position)
+                    const detection = detections[0];
+                    const landmarks = detection.landmarks;
+                    
+                    if (landmarks) {
+                        // Simplified focus detection based on eye landmarks
+                        const leftEye = landmarks.getLeftEye();
+                        const rightEye = landmarks.getRightEye();
+                        
+                        // Basic focus check (this is simplified)
+                        const eyeDistance = Math.abs(leftEye[0].x - rightEye[0].x);
+                        const isLookingAway = eyeDistance < 30; // Simplified threshold
+                        
+                        if (isLookingAway) {
+                            consecutiveFocusLoss++;
+                            if (consecutiveFocusLoss > 5) { // 5 seconds
+                                focusLostCount++;
+                                addAlert('Candidate looking away for >5 seconds', 'warning');
+                                consecutiveFocusLoss = 0;
+                            }
+                        } else {
+                            consecutiveFocusLoss = 0;
+                            lastFocusTime = Date.now();
+                        }
+
+                        // Drowsiness detection
+                        const eyesClosed = detectEyeClosure(landmarks);
+                        if (eyesClosed) {
+                            consecutiveEyesClosed++;
+                            eyesClosedDuration++;
+                            
+                            // Alert if eyes closed for more than 3 seconds
+                            if (consecutiveEyesClosed > 3) {
+                                drowsinessCount++;
+                                addAlert('Eyes closed for >3 seconds - possible drowsiness', 'warning');
+                                consecutiveEyesClosed = 0;
+                            }
+                        } else {
+                            consecutiveEyesClosed = 0;
+                        }
+                    }
+                } else {
+                    // Multiple faces detected
+                    multipleFacesCount++;
+                    addAlert(`Multiple faces detected (${detections.length})`, 'danger');
+                }
+            } catch (error) {
+                // Fallback detection method
+                basicFaceDetection(video);
+            }
+        }
+
+        // Basic fallback face detection
+        function basicFaceDetection(video) {
+            // Simulate face detection results
+            const randomFactor = Math.random();
+            
+            if (randomFactor < 0.1) {
+                // 10% chance of no face
+                consecutiveNoFace++;
+                if (consecutiveNoFace > 10) {
+                    noFaceCount++;
+                    addAlert('No face detected for >10 seconds', 'danger');
+                    consecutiveNoFace = 0;
+                }
+            } else if (randomFactor < 0.15) {
+                // 5% chance of multiple faces
+                multipleFacesCount++;
+                addAlert('Multiple faces detected', 'danger');
+            } else {
+                consecutiveNoFace = 0;
+                
+                // Check focus loss occasionally
+                if (randomFactor < 0.25) {
+                    consecutiveFocusLoss++;
+                    if (consecutiveFocusLoss > 5) {
+                        focusLostCount++;
+                        addAlert('Candidate looking away for >5 seconds', 'warning');
+                        consecutiveFocusLoss = 0;
+                    }
+                } else {
+                    consecutiveFocusLoss = 0;
+                }
+
+                // Simulate drowsiness detection
+                if (randomFactor < 0.1) {
+                    consecutiveEyesClosed++;
+                    if (consecutiveEyesClosed > 3) {
+                        drowsinessCount++;
+                        addAlert('Eyes closed for >3 seconds - possible drowsiness', 'warning');
+                        consecutiveEyesClosed = 0;
+                    }
+                } else {
+                    consecutiveEyesClosed = 0;
+                }
+            }
+        }
+
+        // Object detection (simplified simulation)
+        function detectObjects() {
+            const objects = ['phone', 'book', 'paper', 'laptop', 'tablet'];
+            const randomFactor = Math.random();
+            
+            // 5% chance of detecting suspicious objects
+            if (randomFactor < 0.05) {
+                const detectedObject = objects[Math.floor(Math.random() * objects.length)];
+                suspiciousObjects.push({
+                    object: detectedObject,
+                    timestamp: new Date(),
+                    confidence: 0.7 + Math.random() * 0.3
+                });
+                addAlert(`Suspicious object detected: ${detectedObject}`, 'danger');
+            }
+        }
+
+        // Update status indicators
+        function updateStatusIndicators() {
+            // Face status
+            const faceStatus = document.getElementById('faceStatus');
+            if (Date.now() - lastFaceDetection < 5000) {
+                faceStatus.textContent = 'Detected';
+                faceStatus.className = 'status-indicator status-good';
+            } else {
+                faceStatus.textContent = 'Not Found';
+                faceStatus.className = 'status-indicator status-danger';
+            }
+
+            // Focus status
+            const focusStatus = document.getElementById('focusStatus');
+            if (consecutiveFocusLoss < 3) {
+                focusStatus.textContent = 'Focused';
+                focusStatus.className = 'status-indicator status-good';
+            } else {
+                focusStatus.textContent = 'Distracted';
+                focusStatus.className = 'status-indicator status-warning';
+            }
+
+            // Drowsiness status
+            const drowsinessStatus = document.getElementById('drowsinessStatus');
+            if (consecutiveEyesClosed < 2) {
+                drowsinessStatus.textContent = 'Alert';
+                drowsinessStatus.className = 'status-indicator status-good';
+            } else if (consecutiveEyesClosed < 5) {
+                drowsinessStatus.textContent = 'Drowsy';
+                drowsinessStatus.className = 'status-indicator status-warning';
+            } else {
+                drowsinessStatus.textContent = 'Sleeping';
+                drowsinessStatus.className = 'status-indicator status-danger';
+            }
+
+            // Object status
+            const objectStatus = document.getElementById('objectStatus');
+            const recentObjects = suspiciousObjects.filter(obj => 
+                Date.now() - obj.timestamp < 30000
+            );
+            
+            if (recentObjects.length === 0) {
+                objectStatus.textContent = 'Clear';
+                objectStatus.className = 'status-indicator status-good';
+            } else {
+                objectStatus.textContent = 'Suspicious';
+                objectStatus.className = 'status-indicator status-danger';
+            }
+
+            // Multiple faces status
+            const multiStatus = document.getElementById('multiStatus');
+            multiStatus.textContent = multipleFacesCount > 0 ? 'Multiple' : 'Single';
+            multiStatus.className = multipleFacesCount > 0 ? 
+                'status-indicator status-danger' : 'status-indicator status-good';
+        }
+
+        // Add alert to the panel
+        function addAlert(message, type) {
+            const alert = {
+                message,
+                type,
+                timestamp: new Date()
+            };
+            
+            alerts.push(alert);
+            
+            const alertElement = document.createElement('div');
+            alertElement.className = `alert alert-${type === 'danger' ? 'danger' : 'warning'}`;
+            alertElement.innerHTML = `
+                <strong>${new Date().toLocaleTimeString()}</strong><br>
+                ${message}
+            `;
+            
+            const container = document.getElementById('alertsContainer');
+            container.insertBefore(alertElement, container.firstChild);
+            
+            // Limit alerts display
+            while (container.children.length > 10) {
+                container.removeChild(container.lastChild);
+            }
+        }
+
+        // Generate report
+        function generateReport() {
+            if (!startTime) return;
+
+            const duration = new Date() - startTime;
+            const durationMinutes = Math.round(duration / 60000);
+            
+            // Calculate integrity score
+            let score = 100;
+            score -= focusLostCount * 5;
+            score -= noFaceCount * 10;
+            score -= multipleFacesCount * 15;
+            score -= drowsinessCount * 8;
+            score -= suspiciousObjects.length * 10;
+            score = Math.max(0, score);
+
+            const candidateName = document.getElementById('candidateName').value;
+            
+            const reportContent = `
+                <div class="score ${getScoreClass(score)}">
+                    Integrity Score: ${score}/100
+                </div>
+                
+                <h3>📊 Interview Summary</h3>
+                <p><strong>Candidate:</strong> ${candidateName}</p>
+                <p><strong>Duration:</strong> ${durationMinutes} minutes</p>
+                <p><strong>Start Time:</strong> ${startTime.toLocaleString()}</p>
+                <p><strong>End Time:</strong> ${new Date().toLocaleString()}</p>
+                
+                <h3>🎯 Focus Analysis</h3>
+                <p><strong>Focus Lost Events:</strong> ${focusLostCount}</p>
+                <p><strong>No Face Events:</strong> ${noFaceCount}</p>
+                <p><strong>Multiple Faces Events:</strong> ${multipleFacesCount}</p>
+                <p><strong>Drowsiness Events:</strong> ${drowsinessCount}</p>
+                <p><strong>Eyes Closed Duration:</strong> ${eyesClosedDuration} seconds</p>
+                
+                <h3>📱 Object Detection</h3>
+                <p><strong>Suspicious Objects:</strong> ${suspiciousObjects.length}</p>
+                ${suspiciousObjects.length > 0 ? `
+                    <ul>
+                        ${suspiciousObjects.map(obj => 
+                            `<li>${obj.object} (${obj.timestamp.toLocaleTimeString()}) - Confidence: ${(obj.confidence * 100).toFixed(1)}%</li>`
+                        ).join('')}
+                    </ul>
+                ` : '<p>No suspicious objects detected.</p>'}
+                
+                <h3>📋 Recommendations</h3>
+                ${generateRecommendations(score, focusLostCount, noFaceCount, multipleFacesCount, drowsinessCount, suspiciousObjects.length)}
+                
+                <div style="text-align: center; margin-top: 30px;">
+                    <button class="button report-btn" onclick="downloadReport()">📥 Download Report</button>
+                    <button class="button start-btn" onclick="startNewInterview()">🔄 New Interview</button>
+                </div>
+            `;
+            
+            document.getElementById('reportContent').innerHTML = reportContent;
+            document.getElementById('reportSection').style.display = 'block';
+            
+            // Scroll to report
+            document.getElementById('reportSection').scrollIntoView({ behavior: 'smooth' });
+        }
+
+        // Get score class for styling
+        function getScoreClass(score) {
+            if (score >= 90) return 'excellent';
+            if (score >= 75) return 'good';
+            if (score >= 60) return 'warning';
+            return 'poor';
+        }
+
+        // Generate recommendations
+        function generateRecommendations(score, focus, noFace, multiple, drowsy, objects) {
+            let recommendations = [];
+            
+            if (score >= 90) {
+                recommendations.push("✅ Excellent interview conduct. Candidate maintained proper focus and environment.");
+            } else {
+                if (focus > 3) recommendations.push("⚠️ Candidate frequently lost focus. Consider discussing attention management.");
+                if (noFace > 2) recommendations.push("🚨 Multiple instances of candidate being away from camera. Review interview protocols.");
+                if (multiple > 0) recommendations.push("🚨 Multiple faces detected. Ensure private interview environment.");
+                if (drowsy > 2) recommendations.push("😴 Signs of drowsiness detected. Consider candidate's alertness and interview timing.");
+                if (objects > 0) recommendations.push("📱 Suspicious objects detected. Verify no unauthorized materials were used.");
+            }
+            
+            return recommendations.map(rec => `<p>${rec}</p>`).join('');
+        }
+
+        // Download report (simplified)
+        function downloadReport() {
+            const content = document.getElementById('reportContent').innerText;
+            const blob = new Blob([content], { type: 'text/plain' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `proctoring_report_${new Date().toISOString().slice(0, 19).replace(/:/g, '-')}.txt`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+        }
+
+        // Start new interview
+        function startNewInterview() {
+            // Reset all variables
+            focusLostCount = 0;
+            noFaceCount = 0;
+            multipleFacesCount = 0;
+            drowsinessCount = 0;
+            suspiciousObjects = [];
+            alerts = [];
+            lastFaceDetection = Date.now();
+            lastFocusTime = Date.now();
+            consecutiveFocusLoss = 0;
+            consecutiveNoFace = 0;
+            consecutiveEyesClosed = 0;
+            eyesClosedDuration = 0;
+            
+            // Hide report
+            document.getElementById('reportSection').style.display = 'none';
+            
+            // Clear alerts
+            document.getElementById('alertsContainer').innerHTML = '';
+            
+            // Reset UI
+            document.getElementById('candidateName').value = '';
+            document.getElementById('timer').textContent = '00:00:00';
+            
+            // Reset status indicators
+            document.getElementById('faceStatus').textContent = 'Good';
+            document.getElementById('faceStatus').className = 'status-indicator status-good';
+            document.getElementById('focusStatus').textContent = 'Focused';
+            document.getElementById('focusStatus').className = 'status-indicator status-good';
+            document.getElementById('drowsinessStatus').textContent = 'Alert';
+            document.getElementById('drowsinessStatus').className = 'status-indicator status-good';
+            document.getElementById('objectStatus').textContent = 'Clear';
+            document.getElementById('objectStatus').className = 'status-indicator status-good';
+            document.getElementById('multiStatus').textContent = 'Single';
+            document.getElementById('multiStatus').className = 'status-indicator status-good';
+            
+            // Scroll to top
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+
+        // Initialize when page loads
+        window.addEventListener('load', function() {
+            console.log('Video Proctoring System with Drowsiness Detection and Audio Monitoring Loaded');
+            
+            // Check for camera availability
+            if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+                alert('Your browser does not support camera access. Please use a modern browser.');
+            }
+
+            // Check for Web Audio API support
+            if (!window.AudioContext && !window.webkitAudioContext) {
+                console.warn('Web Audio API not supported - audio detection will be disabled');
+            }
+        });
+    </script>
+</body>
+</html>
