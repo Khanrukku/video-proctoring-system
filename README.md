@@ -278,6 +278,16 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 - Express.js community for web framework
 - Open source community for various libraries used
 
+
+
+##screenshots & screen recording 
+
+Database-
+<img width="1366" height="768" alt="image" src="https://github.com/user-attachments/assets/276b885e-3683-4ca0-98aa-f52e6f3d6098" />
+
+demo-
+
+
 ## 📞 Support
 
 For issues and questions:
@@ -288,3 +298,7 @@ For issues and questions:
 ---
 
 **Made with ❤️ for secure online examinations**
+
+
+
+
